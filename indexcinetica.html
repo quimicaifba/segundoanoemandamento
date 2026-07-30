@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Veja colisões efetivas, curvas de consumo de reagente e o efeito do catalisador na energia de ativação."/>
+  <title>SICIN — Simulador Interativo de Cinética Química</title>
+  <link rel="stylesheet" href="stylecinetica.css"/>
+</head>
+<body>
+
+  <!-- Camada de simulação de daltonismo (backdrop-filter, nunca no body) -->
+  <div id="colorblindOverlay" aria-hidden="true"></div>
+
+  <nav class="skip-nav" aria-label="Atalhos de navegação">
+    <a href="#sidebar-left"  class="skip-link">Pular para menus e informações</a>
+    <a href="#sim-canvas"    class="skip-link">Pular para a simulação</a>
+    <a href="#sidebar-right" class="skip-link">Pular para os controles</a>
+  </nav>
+
+  <div id="sr-live"           class="sr-only" aria-live="polite"    aria-atomic="true"></div>
+  <div id="sr-live-assertive" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+  <header class="app-header" role="banner">
+    <div class="header-brand">
+      <a class="header-back" href="indexsegundoano.html" aria-label="Voltar à Central de Simuladores">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="16" height="16"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        <span>Central</span>
+      </a>
+      <button class="header-logo" id="btn-app-logo" aria-label="Logo do SICIN — toque para uma curiosidade química">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" width="22" height="22"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+      </button>
+      <div>
+        <h1>SICIN</h1>
+        <p class="header-sub">Simulador Interativo de Cinética Química</p>
+      </div>
+    </div>
+
+    <div class="a11y-bar" role="toolbar" aria-label="Controle de reprodução">
+      <button class="a11y-btn a11y-btn--icon" id="btn-pause"
+              aria-label="Pausar animação" aria-pressed="false"
+              title="Pausar / Retomar (Alt+P)">
+        <span aria-hidden="true" id="pause-icon">⏸</span>
+      </button>
+    </div>
+    <button type="button" class="mobile-menu-btn" id="mobile-info-btn"
+      aria-label="Abrir menus e informações" aria-expanded="false" aria-controls="sidebar-left">☰</button>
+    <button type="button" class="mobile-menu-btn" id="mobile-menu-btn"
+      aria-label="Abrir controles da simulação" aria-expanded="false" aria-controls="sidebar-right">🎛</button>
+  </header>
+
+  <div class="mobile-backdrop" id="mobile-backdrop" hidden></div>
+
+  <div class="keyboard-hints" role="note" aria-label="Atalhos de teclado disponíveis">
+    <kbd>Alt+1–3</kbd> Modos &nbsp;
+    <kbd>Alt+P</kbd> Pausa &nbsp;
+    <kbd>Enter/Espaço</kbd> Ação no gráfico
+  </div>
+
+  <main class="app-main" id="main-content" role="main">
+
+    <aside class="sidebar sidebar--left" id="sidebar-left"
+           aria-label="Menus, listagens e informações do simulador">
+
+      <!-- ════════ MODOS (um painel-acordeão por modo, gerado de SIM_DATA.MODES) ════════ -->
+      <div id="model-list" aria-label="Modos de exemplo disponíveis, cada um com painel próprio"></div>
+
+    </aside>
+
+    <div class="canvas-wrap">
+      <canvas id="sim-canvas" tabindex="0" role="img"
+              aria-label="Simulação animada do modo selecionado"
+              aria-describedby="canvas-desc"></canvas>
+      <p id="canvas-desc" class="sr-only">
+        Área de simulação com partículas colidindo, curva de concentração pelo tempo e diagrama de energia de ativação.
+      </p>
+      <div class="canvas-overlay" aria-hidden="true">
+        <span class="overlay-label" id="overlay-label">SICIN</span>
+      </div>
+      <div class="canvas-hint" aria-hidden="true" id="canvas-hint">Escolha um modo ao lado e clique em "Ativar" para iniciar a simulação.</div>
+      <div class="fps-counter" aria-hidden="true" id="fps-counter">-- fps</div>
+        </div>
+
+    <aside class="sidebar sidebar--right" id="sidebar-right"
+           aria-label="Controles da simulação">
+
+      <!-- ════════ MODO 1 — COLISÕES ════════ -->
+      <section class="panel" id="panel-colisoes" data-owner hidden aria-labelledby="hdr-col">
+        <button class="panel-header" id="hdr-col" aria-expanded="true" aria-controls="body-col">
+          <span class="panel-icon" aria-hidden="true">💥</span>
+          <span class="panel-label">Mistura Reacional</span>
+          <span class="panel-badge">4</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-col">
+          <div class="slider-row">
+            <label for="col-t">Temperatura</label>
+            <input type="range" id="col-t" data-bind="tcol" min="10" max="60" step="1" value="25" data-unit="°C"/>
+            <output id="out-col-t" for="col-t">25 °C</output>
+          </div>
+          <div class="slider-row">
+            <label for="col-na">Partículas A</label>
+            <input type="range" id="col-na" data-bind="na" min="5" max="40" step="1" value="18"/>
+            <output id="out-col-na" for="col-na">18</output>
+          </div>
+          <div class="slider-row">
+            <label for="col-nb">Partículas B</label>
+            <input type="range" id="col-nb" data-bind="nb" min="5" max="40" step="1" value="18"/>
+            <output id="out-col-nb" for="col-nb">18</output>
+          </div>
+
+          <div class="seg" data-group="cat" role="group" aria-label="Catalisador na mistura">
+            <button class="seg-btn" data-value="0" aria-pressed="true">Sem catalisador</button>
+            <button class="seg-btn" data-value="1" aria-pressed="false">Com catalisador</button>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="col-reset"><span aria-hidden="true">↺</span> Nova mistura</button>
+          </div>
+          <p class="hint-text">Colisão <strong>efetiva</strong> exige energia acima de Ea e orientação correta.</p>
+        </div>
+      </section>
+
+      <!-- ════════ MODO 2 — CURVA CINÉTICA ════════ -->
+      <section class="panel" id="panel-curva" data-owner hidden aria-labelledby="hdr-cur">
+        <button class="panel-header" id="hdr-cur" aria-expanded="true" aria-controls="body-cur">
+          <span class="panel-icon" aria-hidden="true">📉</span>
+          <span class="panel-label">Condições da Corrida</span>
+          <span class="panel-badge">5</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-cur">
+          <div class="slider-row">
+            <label for="cur-a0">[A]₀</label>
+            <input type="range" id="cur-a0" data-bind="a0" min="0.2" max="2" step="0.05" value="1" data-fmt="f2" data-unit="mol/L"/>
+            <output id="out-cur-a0" for="cur-a0">1,00 mol/L</output>
+          </div>
+          <div class="slider-row">
+            <label for="cur-t">Temperatura</label>
+            <input type="range" id="cur-t" data-bind="tcur" min="10" max="60" step="1" value="25" data-unit="°C"/>
+            <output id="out-cur-t" for="cur-t">25 °C</output>
+          </div>
+
+          <div class="seg" data-group="catcur" role="group" aria-label="Catalisador na corrida">
+            <button class="seg-btn" data-value="0" aria-pressed="true">Sem catalisador</button>
+            <button class="seg-btn" data-value="1" aria-pressed="false">Com catalisador</button>
+          </div>
+
+          <div class="slider-row">
+            <label for="cur-t1">Instante t₁</label>
+            <input type="range" id="cur-t1" data-bind="t1" min="0" max="58" step="1" value="5" data-unit="s"/>
+            <output id="out-cur-t1" for="cur-t1">5 s</output>
+          </div>
+          <div class="slider-row">
+            <label for="cur-t2">Instante t₂</label>
+            <input type="range" id="cur-t2" data-bind="t2" min="2" max="60" step="1" value="25" data-unit="s"/>
+            <output id="out-cur-t2" for="cur-t2">25 s</output>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="cur-reset"><span aria-hidden="true">↺</span> Reiniciar corrida</button>
+          </div>
+          <p class="hint-text">A reta entre t₁ e t₂ é a <strong>secante</strong>: sua inclinação é a velocidade média.</p>
+        </div>
+      </section>
+
+      <!-- ════════ MODO 3 — ENERGIA DE ATIVAÇÃO ════════ -->
+      <section class="panel" id="panel-energia" data-owner hidden aria-labelledby="hdr-ene">
+        <button class="panel-header" id="hdr-ene" aria-expanded="true" aria-controls="body-ene">
+          <span class="panel-icon" aria-hidden="true">⛰️</span>
+          <span class="panel-label">Caminho da Reação</span>
+          <span class="panel-badge">4</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-ene">
+          <div class="opt-grid cols-1" id="ene-grid" data-group="caminho" role="listbox"
+               aria-label="Caminhos de reação e suas energias de ativação"></div>
+
+          <div class="slider-row">
+            <label for="ene-t">Temperatura</label>
+            <input type="range" id="ene-t" data-bind="tene" min="0" max="120" step="1" value="25" data-unit="°C"/>
+            <output id="out-ene-t" for="ene-t">25 °C</output>
+          </div>
+
+          <div class="data-grid">
+            <div class="data-row"><dt class="data-label">Reação</dt><dd class="data-value">2 H₂O₂ → 2 H₂O + O₂</dd></div>
+            <div class="data-row"><dt class="data-label">ΔH</dt><dd class="data-value val-exo">−98 kJ/mol</dd></div>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="ene-status"><span aria-hidden="true">🔊</span> Comparar caminhos</button>
+          </div>
+          <p class="hint-text">O catalisador abaixa a Ea, mas <strong>não altera o ΔH</strong> da reação.</p>
+        </div>
+      </section>
+
+      <!-- ════════ RESULTADOS (sempre visível, independe do modo) ════════ -->
+      <section class="panel" aria-labelledby="hdr-result">
+        <button class="panel-header" id="hdr-result" aria-expanded="true" aria-controls="body-result">
+          <span class="panel-icon" aria-hidden="true">📊</span>
+          <span class="panel-label">Resultados</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-result">
+          <dl class="data-grid" id="result-grid" aria-live="polite" aria-atomic="true"></dl>
+        </div>
+      </section>
+
+    </aside>
+
+    
+
+  </main>
+
+  <div vw class="enabled">
+    <div vw-access-button class="active"></div>
+    <div vw-plugin-wrapper>
+      <div class="vw-plugin-top-wrapper"></div>
+    </div>
+  </div>
+  <script src="dadoscinetica.js"></script>
+  <script src="scrpitcinetica.js"></script>
+</body>
+</html>

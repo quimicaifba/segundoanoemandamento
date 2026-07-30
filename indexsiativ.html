@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Questões interativas com feedback imediato sobre todos os simuladores de Físico-Química do 2º ano."/>
+  <title>SIATIV — Atividades dos Simuladores</title>
+  <link rel="stylesheet" href="stylesiativ.css"/>
+</head>
+<body>
+
+  <!-- Camada de simulação de daltonismo (backdrop-filter, nunca no body) -->
+  <div id="colorblindOverlay" aria-hidden="true"></div>
+
+  <nav class="skip-nav" aria-label="Atalhos de navegação">
+    <a href="#sidebar-left"  class="skip-link">Pular para menus e informações</a>
+    <a href="#quiz-area"     class="skip-link">Pular para as questões</a>
+    <a href="#sidebar-right" class="skip-link">Pular para o progresso</a>
+  </nav>
+
+  <div id="sr-live"           class="sr-only" aria-live="polite"    aria-atomic="true"></div>
+  <div id="sr-live-assertive" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+  <header class="app-header" role="banner">
+    <div class="header-brand">
+      <a class="header-back" href="indexsegundoano.html" aria-label="Voltar à Central de Simuladores">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="16" height="16"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        <span>Central</span>
+      </a>
+      <button class="header-logo" id="btn-app-logo" aria-label="Logo do SIATIV — toque para uma dica de estudo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" width="22" height="22"><rect x="3" y="2" width="13" height="18" rx="2"/><path d="M6.5 7h6M6.5 10.5h6M6.5 14h3.5"/><path d="M14 16.5l2.5 2.5 4.5-5"/></svg>
+      </button>
+      <div>
+        <h1>SIATIV</h1>
+        <p class="header-sub">Atividades dos Simuladores</p>
+      </div>
+    </div>
+
+    <button type="button" class="mobile-menu-btn" id="mobile-info-btn"
+      aria-label="Abrir menus e informações" aria-expanded="false" aria-controls="sidebar-left">☰</button>
+    <button type="button" class="mobile-menu-btn" id="mobile-menu-btn"
+      aria-label="Abrir progresso e ações" aria-expanded="false" aria-controls="sidebar-right">🎛</button>
+  </header>
+
+  <div class="mobile-backdrop" id="mobile-backdrop" hidden></div>
+
+  <div class="keyboard-hints" role="note" aria-label="Atalhos de teclado disponíveis">
+    <kbd>Alt+1–7</kbd> Conteúdos &nbsp;
+    <kbd>Tab</kbd> Percorre alternativas &nbsp;
+    <kbd>Enter/Espaço</kbd> Responde
+  </div>
+
+  <main class="app-main" id="main-content" role="main">
+
+    <aside class="sidebar sidebar--left" id="sidebar-left"
+           aria-label="Menus, listagens e informações das atividades">
+
+      <!-- ════════ CONTEÚDOS ════════ -->
+      <section class="panel" aria-labelledby="hdr-mode">
+        <button class="panel-header" id="hdr-mode" aria-expanded="true" aria-controls="body-mode">
+          <span class="panel-icon" aria-hidden="true">📚</span>
+          <span class="panel-label">Conteúdo</span>
+          <span class="panel-badge">7</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-mode">
+          <div class="model-list" id="model-list" role="listbox"
+               aria-label="Conteúdos disponíveis para praticar" aria-orientation="vertical"></div>
+        </div>
+      </section>
+
+      <!-- ════════ SOBRE O CONTEÚDO ════════ -->
+      <section class="panel" aria-labelledby="hdr-info">
+        <button class="panel-header" id="hdr-info" aria-expanded="true" aria-controls="body-info">
+          <span class="panel-icon" aria-hidden="true">ℹ️</span>
+          <span class="panel-label">Sobre o Conteúdo</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-info">
+          <p class="info-text" id="mode-info-text"></p>
+        </div>
+      </section>
+
+      <!-- ════════ RESULTADOS ════════ -->
+      <section class="panel" aria-labelledby="hdr-result">
+        <button class="panel-header" id="hdr-result" aria-expanded="true" aria-controls="body-result">
+          <span class="panel-icon" aria-hidden="true">📊</span>
+          <span class="panel-label">Resultados</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-result">
+          <dl class="data-grid" id="result-grid" aria-live="polite" aria-atomic="true"></dl>
+        </div>
+      </section>
+
+    </aside>
+
+    <div class="canvas-wrap quiz-wrap">
+      <section id="quiz-area" tabindex="-1"
+               aria-label="Cartão da questão atual"></section>
+    </div>
+
+    <aside class="sidebar sidebar--right" id="sidebar-right"
+           aria-label="Progresso e ações das atividades">
+
+      <!-- ════════ PROGRESSO ════════ -->
+      <section class="panel" aria-labelledby="hdr-prog">
+        <button class="panel-header" id="hdr-prog" aria-expanded="true" aria-controls="body-prog">
+          <span class="panel-icon" aria-hidden="true">🏁</span>
+          <span class="panel-label">Progresso do Bloco</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-prog">
+          <div class="quiz-barra" role="img" aria-label="Barra de progresso do bloco de questões">
+            <div class="quiz-barra-fill" id="ativ-bar-fill" style="width:0%"></div>
+          </div>
+          <p class="hint-text" id="ativ-count" aria-live="polite">0 de 5 respondidas · 0 certas</p>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="refazer"><span aria-hidden="true">↺</span> Reiniciar conteúdo</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════ COMO RESPONDER ════════ -->
+      <section class="panel" aria-labelledby="hdr-como">
+        <button class="panel-header" id="hdr-como" aria-expanded="true" aria-controls="body-como">
+          <span class="panel-icon" aria-hidden="true">💡</span>
+          <span class="panel-label">Como Responder</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-como">
+          <p class="hint-text">Escolha um <strong>conteúdo</strong> à esquerda e toque numa alternativa. A correta acende em verde; se errar, a sua fica vermelha e a certa aparece.</p>
+          <p class="hint-text">Leia a <strong>explicação</strong> antes de avançar — é nela que a nota vira aprendizado. Ao final, refaça o bloco: as questões vêm em nova ordem.</p>
+        </div>
+      </section>
+
+    </aside>
+
+  </main>
+
+  <div vw class="enabled">
+    <div vw-access-button class="active"></div>
+    <div vw-plugin-wrapper>
+      <div class="vw-plugin-top-wrapper"></div>
+    </div>
+  </div>
+  <script src="dadossiativ.js"></script>
+  <script src="scrpitsiativ.js"></script>
+</body>
+</html>

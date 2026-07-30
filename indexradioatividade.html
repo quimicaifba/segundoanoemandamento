@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Compare as emissões alfa, beta e gama, acompanhe a meia-vida de isótopos reais e controle uma fissão nuclear em cadeia."/>
+  <title>SIRAD — Simulador Interativo de Radioatividade</title>
+  <link rel="stylesheet" href="styleradioatividade.css"/>
+</head>
+<body>
+
+  <!-- Camada de simulação de daltonismo (backdrop-filter, nunca no body) -->
+  <div id="colorblindOverlay" aria-hidden="true"></div>
+
+  <nav class="skip-nav" aria-label="Atalhos de navegação">
+    <a href="#sidebar-left"  class="skip-link">Pular para menus e informações</a>
+    <a href="#sim-canvas"    class="skip-link">Pular para a simulação</a>
+    <a href="#sidebar-right" class="skip-link">Pular para os controles</a>
+  </nav>
+
+  <div id="sr-live"           class="sr-only" aria-live="polite"    aria-atomic="true"></div>
+  <div id="sr-live-assertive" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+  <header class="app-header" role="banner">
+    <div class="header-brand">
+      <a class="header-back" href="indexsegundoano.html" aria-label="Voltar à Central de Simuladores">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="16" height="16"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        <span>Central</span>
+      </a>
+      <button class="header-logo" id="btn-app-logo" aria-label="Logo do SIRAD — toque para uma curiosidade química">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" width="22" height="22"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><path d="M12 12V4.8A7.2 7.2 0 0 1 18.2 8.4Z" fill="currentColor" stroke="none"/><path d="M12 12L5.8 8.4A7.2 7.2 0 0 0 5.8 15.6Z" fill="currentColor" stroke="none"/><path d="M12 12l6.2 3.6A7.2 7.2 0 0 1 12 19.2Z" fill="currentColor" stroke="none"/></svg>
+      </button>
+      <div>
+        <h1>SIRAD</h1>
+        <p class="header-sub">Simulador Interativo de Radioatividade</p>
+      </div>
+    </div>
+
+    <div class="a11y-bar" role="toolbar" aria-label="Controle de reprodução">
+      <button class="a11y-btn a11y-btn--icon" id="btn-pause"
+              aria-label="Pausar animação" aria-pressed="false"
+              title="Pausar / Retomar (Alt+P)">
+        <span aria-hidden="true" id="pause-icon">⏸</span>
+      </button>
+    </div>
+    <button type="button" class="mobile-menu-btn" id="mobile-info-btn"
+      aria-label="Abrir menus e informações" aria-expanded="false" aria-controls="sidebar-left">☰</button>
+    <button type="button" class="mobile-menu-btn" id="mobile-menu-btn"
+      aria-label="Abrir controles da simulação" aria-expanded="false" aria-controls="sidebar-right">🎛</button>
+  </header>
+
+  <div class="mobile-backdrop" id="mobile-backdrop" hidden></div>
+
+  <div class="keyboard-hints" role="note" aria-label="Atalhos de teclado disponíveis">
+    <kbd>Alt+1–3</kbd> Modos &nbsp;
+    <kbd>Alt+P</kbd> Pausa &nbsp;
+    <kbd>Enter/Espaço</kbd> Ação no gráfico
+  </div>
+
+  <main class="app-main" id="main-content" role="main">
+
+    <aside class="sidebar sidebar--left" id="sidebar-left"
+           aria-label="Menus, listagens e informações do simulador">
+
+      <!-- ════════ MODOS (um painel-acordeão por modo, gerado de SIM_DATA.MODES) ════════ -->
+      <div id="model-list" aria-label="Modos de exemplo disponíveis, cada um com painel próprio"></div>
+
+    </aside>
+
+    <div class="canvas-wrap">
+      <canvas id="sim-canvas" tabindex="0" role="img"
+              aria-label="Simulação animada do modo selecionado"
+              aria-describedby="canvas-desc"></canvas>
+      <p id="canvas-desc" class="sr-only">
+        Área de simulação com fonte radioativa, barreiras, campo elétrico, amostra de núcleos em decaimento e reator de fissão, atualizada em tempo real conforme os controles.
+      </p>
+      <div class="canvas-overlay" aria-hidden="true">
+        <span class="overlay-label" id="overlay-label">SIRAD</span>
+      </div>
+      <div class="canvas-hint" aria-hidden="true" id="canvas-hint">Escolha um modo ao lado e clique em "Ativar" para iniciar a simulação.</div>
+      <div class="fps-counter" aria-hidden="true" id="fps-counter">-- fps</div>
+        </div>
+
+    <aside class="sidebar sidebar--right" id="sidebar-right"
+           aria-label="Controles da simulação">
+
+      <!-- ════════ MODO 1 — EMISSÕES ════════ -->
+      <section class="panel" id="panel-emis" data-owner hidden aria-labelledby="hdr-emis">
+        <button class="panel-header" id="hdr-emis" aria-expanded="true" aria-controls="body-emis">
+          <span class="panel-icon" aria-hidden="true">☢️</span>
+          <span class="panel-label">Cenário do Experimento</span>
+          <span class="panel-badge">2</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-emis">
+          <div class="seg" data-group="cenario" role="group" aria-label="Cenário do experimento de emissões">
+            <button class="seg-btn" data-value="barreiras" aria-pressed="true">Barreiras</button>
+            <button class="seg-btn" data-value="campo" aria-pressed="false">Campo elétrico</button>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="emitir"><span aria-hidden="true">▶</span> Emitir radiação</button>
+          </div>
+          <p class="hint-text"><strong>α</strong> para no papel, <strong>β</strong> no alumínio e <strong>γ</strong> só é atenuada pelo chumbo. No campo, cada uma desvia conforme carga e massa.</p>
+        </div>
+      </section>
+
+      <!-- ════════ MODO 2 — MEIA-VIDA ════════ -->
+      <section class="panel" id="panel-meia" data-owner hidden aria-labelledby="hdr-meia">
+        <button class="panel-header" id="hdr-meia" aria-expanded="true" aria-controls="body-meia">
+          <span class="panel-icon" aria-hidden="true">⏳</span>
+          <span class="panel-label">Isótopo e Tempo</span>
+          <span class="panel-badge">4</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-meia">
+          <div class="opt-grid" id="meia-grid" data-group="isotopo" role="listbox"
+               aria-label="Isótopos radioativos com suas meias-vidas"></div>
+
+          <div class="slider-row">
+            <label for="mv-m0">Massa inicial</label>
+            <input type="range" id="mv-m0" data-bind="mvM0" min="10" max="400" step="10" value="100" data-unit="g"/>
+            <output id="out-mv-m0" for="mv-m0">100 g</output>
+          </div>
+          <div class="slider-row">
+            <label for="mv-t">Tempo</label>
+            <input type="range" id="mv-t" data-bind="mvT" min="0" max="6" step="0.1" value="0" data-fmt="f1" data-unit="t½"/>
+            <output id="out-mv-t" for="mv-t">0,0 t½</output>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="mv-sortear"><span aria-hidden="true">🎲</span> Sortear amostra</button>
+            <button class="action-btn" data-action="mv-reset"><span aria-hidden="true">↺</span> Restaurar</button>
+          </div>
+          <p class="hint-text">Cada meia-vida corta a amostra <strong>pela metade</strong>: 100 % → 50 % → 25 % → 12,5 %…</p>
+        </div>
+      </section>
+
+      <!-- ════════ MODO 3 — FISSÃO EM CADEIA ════════ -->
+      <section class="panel" id="panel-cadeia" data-owner hidden aria-labelledby="hdr-cadeia">
+        <button class="panel-header" id="hdr-cadeia" aria-expanded="true" aria-controls="body-cadeia">
+          <span class="panel-icon" aria-hidden="true">⚛️</span>
+          <span class="panel-label">Reator e Controle</span>
+          <span class="panel-badge">3</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-cadeia">
+          <div class="slider-row">
+            <label for="cad-ctrl">Barras de controle</label>
+            <input type="range" id="cad-ctrl" data-bind="cadCtrl" min="0" max="100" step="5" value="50" data-unit="%"/>
+            <output id="out-cad-ctrl" for="cad-ctrl">50 %</output>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="disparar"><span aria-hidden="true">🎯</span> Disparar nêutron</button>
+            <button class="action-btn" data-action="cad-reset"><span aria-hidden="true">↺</span> Novo combustível</button>
+          </div>
+          <p class="hint-text">Cada fissão libera <strong>3 nêutrons</strong>; as barras absorvem parte deles. Busque k ≈ 1 para operar como um reator.</p>
+        </div>
+      </section>
+
+      <!-- ════════ RESULTADOS (sempre visível, independe do modo) ════════ -->
+      <section class="panel" aria-labelledby="hdr-result">
+        <button class="panel-header" id="hdr-result" aria-expanded="true" aria-controls="body-result">
+          <span class="panel-icon" aria-hidden="true">📊</span>
+          <span class="panel-label">Resultados</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-result">
+          <dl class="data-grid" id="result-grid" aria-live="polite" aria-atomic="true"></dl>
+        </div>
+      </section>
+
+    </aside>
+
+    
+
+  </main>
+
+  <div vw class="enabled">
+    <div vw-access-button class="active"></div>
+    <div vw-plugin-wrapper>
+      <div class="vw-plugin-top-wrapper"></div>
+    </div>
+  </div>
+  <script src="dadosradioatividade.js"></script>
+  <script src="scrpitradioatividade.js"></script>
+</body>
+</html>

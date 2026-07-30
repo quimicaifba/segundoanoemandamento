@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Atinja o equilíbrio, aplique Le Chatelier, compare Q com K, percorra a escala de pH, calcule ionizações e titule ácido com base."/>
+  <title>SIEQ — Simulador Interativo de Equilíbrio Químico e Iônico</title>
+  <link rel="stylesheet" href="styleequilibrio.css"/>
+</head>
+<body>
+
+  <!-- Camada de simulação de daltonismo (backdrop-filter, nunca no body) -->
+  <div id="colorblindOverlay" aria-hidden="true"></div>
+
+  <nav class="skip-nav" aria-label="Atalhos de navegação">
+    <a href="#sidebar-left"  class="skip-link">Pular para menus e informações</a>
+    <a href="#sim-canvas"    class="skip-link">Pular para a simulação</a>
+    <a href="#sidebar-right" class="skip-link">Pular para os controles</a>
+  </nav>
+
+  <div id="sr-live"           class="sr-only" aria-live="polite"    aria-atomic="true"></div>
+  <div id="sr-live-assertive" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+  <header class="app-header" role="banner">
+    <div class="header-brand">
+      <a class="header-back" href="indexsegundoano.html" aria-label="Voltar à Central de Simuladores">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="16" height="16"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        <span>Central</span>
+      </a>
+      <button class="header-logo" id="btn-app-logo" aria-label="Logo do SIEQ — toque para uma curiosidade química">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" width="22" height="22"><path d="M4 8h13M14 5l3 3-3 3M20 16H7M10 13l-3 3 3 3"/></svg>
+      </button>
+      <div>
+        <h1>SIEQ</h1>
+        <p class="header-sub">Simulador Interativo de Equilíbrio Químico e Iônico</p>
+      </div>
+    </div>
+
+    <div class="a11y-bar" role="toolbar" aria-label="Controle de reprodução">
+      <button class="a11y-btn a11y-btn--icon" id="btn-pause"
+              aria-label="Pausar animação" aria-pressed="false"
+              title="Pausar / Retomar (Alt+P)">
+        <span aria-hidden="true" id="pause-icon">⏸</span>
+      </button>
+    </div>
+    <button type="button" class="mobile-menu-btn" id="mobile-info-btn"
+      aria-label="Abrir menus e informações" aria-expanded="false" aria-controls="sidebar-left">☰</button>
+    <button type="button" class="mobile-menu-btn" id="mobile-menu-btn"
+      aria-label="Abrir controles da simulação" aria-expanded="false" aria-controls="sidebar-right">🎛</button>
+  </header>
+
+  <div class="mobile-backdrop" id="mobile-backdrop" hidden></div>
+
+  <div class="keyboard-hints" role="note" aria-label="Atalhos de teclado disponíveis">
+    <kbd>Alt+1–6</kbd> Modos &nbsp;
+    <kbd>Alt+P</kbd> Pausa &nbsp;
+    <kbd>Enter/Espaço</kbd> Ação no gráfico
+  </div>
+
+  <main class="app-main" id="main-content" role="main">
+
+    <aside class="sidebar sidebar--left" id="sidebar-left"
+           aria-label="Menus, listagens e informações do simulador">
+
+      <!-- ════════ MODOS (um painel-acordeão por modo, gerado de SIM_DATA.MODES) ════════ -->
+      <div id="model-list" aria-label="Modos de exemplo disponíveis, cada um com painel próprio"></div>
+
+    </aside>
+
+    <div class="canvas-wrap">
+      <canvas id="sim-canvas" tabindex="0" role="img"
+              aria-label="Simulação animada do modo selecionado"
+              aria-describedby="canvas-desc"></canvas>
+      <p id="canvas-desc" class="sr-only">
+        Área de simulação com frascos em equilíbrio, curvas de concentração, escala de pH, tiras indicadoras e bureta de titulação, atualizada em tempo real conforme os controles.
+      </p>
+      <div class="canvas-overlay" aria-hidden="true">
+        <span class="overlay-label" id="overlay-label">SIEQ</span>
+      </div>
+      <div class="canvas-hint" aria-hidden="true" id="canvas-hint">Escolha um modo ao lado e clique em "Ativar" para iniciar a simulação.</div>
+      <div class="fps-counter" aria-hidden="true" id="fps-counter">-- fps</div>
+        </div>
+
+    <aside class="sidebar sidebar--right" id="sidebar-right"
+           aria-label="Controles da simulação">
+
+      <!-- ════════ MODO 1 — ATINGINDO O EQUILÍBRIO ════════ -->
+      <section class="panel" id="panel-atingir" data-owner hidden aria-labelledby="hdr-atg">
+        <button class="panel-header" id="hdr-atg" aria-expanded="true" aria-controls="body-atg">
+          <span class="panel-icon" aria-hidden="true">🚀</span>
+          <span class="panel-label">Concentrações Iniciais</span>
+          <span class="panel-badge">3</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-atg">
+          <div class="slider-row">
+            <label for="atg-h2">[H₂]₀</label>
+            <input type="range" id="atg-h2" data-bind="h2i" min="0" max="2" step="0.05" value="1" data-fmt="f2" data-unit="mol/L"/>
+            <output id="out-atg-h2" for="atg-h2">1,00 mol/L</output>
+          </div>
+          <div class="slider-row">
+            <label for="atg-i2">[I₂]₀</label>
+            <input type="range" id="atg-i2" data-bind="i2i" min="0" max="2" step="0.05" value="1" data-fmt="f2" data-unit="mol/L"/>
+            <output id="out-atg-i2" for="atg-i2">1,00 mol/L</output>
+          </div>
+          <div class="slider-row">
+            <label for="atg-hi">[HI]₀</label>
+            <input type="range" id="atg-hi" data-bind="hii" min="0" max="3" step="0.05" value="0" data-fmt="f2" data-unit="mol/L"/>
+            <output id="out-atg-hi" for="atg-hi">0,00 mol/L</output>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="eq-reset"><span aria-hidden="true">↺</span> Reiniciar reação</button>
+          </div>
+          <div class="data-grid">
+            <div class="data-row"><dt class="data-label">Reação</dt><dd class="data-value">H₂ + I₂ ⇌ 2 HI</dd></div>
+            <div class="data-row"><dt class="data-label">Kc (448 °C)</dt><dd class="data-value val-ok">50</dd></div>
+          </div>
+          <p class="hint-text">Comece só com HI para ver o equilíbrio ser atingido <strong>pelo outro lado</strong>.</p>
+        </div>
+      </section>
+
+      <!-- ════════ MODO 2 — LE CHATELIER ════════ -->
+      <section class="panel" id="panel-lechatelier" data-owner hidden aria-labelledby="hdr-lch">
+        <button class="panel-header" id="hdr-lch" aria-expanded="true" aria-controls="body-lch">
+          <span class="panel-icon" aria-hidden="true">🎛️</span>
+          <span class="panel-label">Perturbar o Sistema</span>
+          <span class="panel-badge">6</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-lch">
+          <p class="info-text">N₂O₄ incolor ⇌ 2 NO₂ castanho · ΔH = +57,2 kJ (endotérmica)</p>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="add-n2o4"><span aria-hidden="true">＋</span> N₂O₄</button>
+            <button class="action-btn" data-action="add-no2"><span aria-hidden="true">＋</span> NO₂</button>
+          </div>
+          <div class="action-row">
+            <button class="action-btn" data-action="aquecer"><span aria-hidden="true">🔥</span> Aquecer</button>
+            <button class="action-btn" data-action="resfriar"><span aria-hidden="true">❄</span> Resfriar</button>
+          </div>
+          <div class="action-row">
+            <button class="action-btn" data-action="comprimir"><span aria-hidden="true">⇥⇤</span> Comprimir</button>
+            <button class="action-btn" data-action="expandir"><span aria-hidden="true">⇤⇥</span> Expandir</button>
+          </div>
+          <div class="action-row">
+            <button class="action-btn" data-action="lch-reset"><span aria-hidden="true">↺</span> Reiniciar frasco</button>
+          </div>
+          <p class="hint-text">A cor do frasco acompanha a concentração de <strong>NO₂</strong>.</p>
+        </div>
+      </section>
+
+      <!-- ════════ MODO 3 — Q × K ════════ -->
+      <section class="panel" id="panel-qk" data-owner hidden aria-labelledby="hdr-qk">
+        <button class="panel-header" id="hdr-qk" aria-expanded="true" aria-controls="body-qk">
+          <span class="panel-icon" aria-hidden="true">⚖️</span>
+          <span class="panel-label">Concentrações do Instante</span>
+          <span class="panel-badge">3</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-qk">
+          <div class="slider-row">
+            <label for="qk-h2">[H₂]</label>
+            <input type="range" id="qk-h2" data-bind="qh2" min="0.05" max="2" step="0.05" value="0.5" data-fmt="f2" data-unit="mol/L"/>
+            <output id="out-qk-h2" for="qk-h2">0,50 mol/L</output>
+          </div>
+          <div class="slider-row">
+            <label for="qk-i2">[I₂]</label>
+            <input type="range" id="qk-i2" data-bind="qi2" min="0.05" max="2" step="0.05" value="0.5" data-fmt="f2" data-unit="mol/L"/>
+            <output id="out-qk-i2" for="qk-i2">0,50 mol/L</output>
+          </div>
+          <div class="slider-row">
+            <label for="qk-hi">[HI]</label>
+            <input type="range" id="qk-hi" data-bind="qhi" min="0" max="4" step="0.05" value="1" data-fmt="f2" data-unit="mol/L"/>
+            <output id="out-qk-hi" for="qk-hi">1,00 mol/L</output>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="qk-status"><span aria-hidden="true">🔊</span> Comparar Q e Kc</button>
+          </div>
+          <p class="hint-text">A seta no medidor aponta o <strong>sentido</strong> em que a reação vai caminhar.</p>
+        </div>
+      </section>
+
+    
+      <section class="panel" id="panel-escala" data-owner hidden aria-labelledby="hdr-esc">
+        <button class="panel-header" id="hdr-esc" aria-expanded="true" aria-controls="body-esc">
+          <span class="panel-icon" aria-hidden="true">🌈</span>
+          <span class="panel-label">Substância e pH</span>
+          <span class="panel-badge">13</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-esc">
+          <div class="opt-grid" id="esc-grid" data-group="substancia" role="listbox"
+               aria-label="Substâncias do cotidiano e seus valores de pH"></div>
+
+          <div class="slider-row">
+            <label for="esc-ph">pH</label>
+            <input type="range" id="esc-ph" data-bind="ph" min="0" max="14" step="0.1" value="7" data-fmt="f1"/>
+            <output id="out-esc-ph" for="esc-ph">7,0</output>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="esc-status"><span aria-hidden="true">🔊</span> Ler valores</button>
+          </div>
+          <p class="hint-text">Cada unidade de pH equivale a <strong>dez vezes</strong> mais ou menos H₃O⁺.</p>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-calculo" data-owner hidden aria-labelledby="hdr-calc">
+        <button class="panel-header" id="hdr-calc" aria-expanded="true" aria-controls="body-calc">
+          <span class="panel-icon" aria-hidden="true">🧮</span>
+          <span class="panel-label">Eletrólito e Concentração</span>
+          <span class="panel-badge">5</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-calc">
+          <div class="opt-grid cols-1" id="calc-grid" data-group="eletrolito" role="listbox"
+               aria-label="Ácidos e bases com suas constantes de ionização"></div>
+
+          <div class="slider-row">
+            <label for="calc-c">Concentração</label>
+            <input type="range" id="calc-c" data-bind="conc" min="-4" max="-1" step="0.1" value="-1" data-pow data-unit="mol/L"/>
+            <output id="out-calc-c" for="calc-c">10^-1,0 mol/L</output>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="calc-status"><span aria-hidden="true">🔊</span> Calcular pH</button>
+          </div>
+          <p class="hint-text">Compare HCl e CH₃COOH na <strong>mesma concentração</strong>: o pH muda bastante.</p>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-titulacao" data-owner hidden aria-labelledby="hdr-tit">
+        <button class="panel-header" id="hdr-tit" aria-expanded="true" aria-controls="body-tit">
+          <span class="panel-icon" aria-hidden="true">⚗️</span>
+          <span class="panel-label">Bureta e Indicador</span>
+          <span class="panel-badge">4</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-tit">
+          <div class="data-grid">
+            <div class="data-row"><dt class="data-label">No erlenmeyer</dt><dd class="data-value">25,0 mL HCl 0,100 M</dd></div>
+            <div class="data-row"><dt class="data-label">Na bureta</dt><dd class="data-value">NaOH 0,100 M</dd></div>
+          </div>
+
+          <div class="opt-grid cols-1" id="tit-grid" data-group="indicador" role="listbox"
+               aria-label="Indicadores e suas faixas de viragem"></div>
+
+          <div class="slider-row">
+            <label for="tit-v">Volume de base</label>
+            <input type="range" id="tit-v" data-bind="vb" min="0" max="50" step="0.1" value="0" data-fmt="f1" data-unit="mL"/>
+            <output id="out-tit-v" for="tit-v">0,0 mL</output>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="gotejar"><span aria-hidden="true">💧</span> Gotejar</button>
+            <button class="action-btn" data-action="tit-auto"><span aria-hidden="true">▶</span> Titular</button>
+          </div>
+          <div class="action-row">
+            <button class="action-btn" data-action="tit-reset"><span aria-hidden="true">↺</span> Reiniciar</button>
+          </div>
+          <p class="hint-text">Perto de 25 mL o pH <strong>salta</strong>: é o ponto de equivalência.</p>
+        </div>
+      </section>
+
+      <!-- ════════ RESULTADOS (sempre visível, independe do modo) ════════ -->
+      <section class="panel" aria-labelledby="hdr-result">
+        <button class="panel-header" id="hdr-result" aria-expanded="true" aria-controls="body-result">
+          <span class="panel-icon" aria-hidden="true">📊</span>
+          <span class="panel-label">Resultados</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-result">
+          <dl class="data-grid" id="result-grid" aria-live="polite" aria-atomic="true"></dl>
+        </div>
+      </section>
+
+    </aside>
+
+    
+
+  </main>
+
+  <div vw class="enabled">
+    <div vw-access-button class="active"></div>
+    <div vw-plugin-wrapper>
+      <div class="vw-plugin-top-wrapper"></div>
+    </div>
+  </div>
+  <script src="dadosequilibrio.js"></script>
+  <script src="scrpitequilibrio.js"></script>
+</body>
+</html>

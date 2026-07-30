@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Prepare, dilua e classifique soluções com curvas reais de solubilidade e meça pressão de vapor, ebulioscopia, crioscopia, osmose e a Lei de Henry."/>
+  <title>SISOL — Simulador Interativo de Soluções e Propriedades Coligativas</title>
+  <link rel="stylesheet" href="stylesolucoes.css"/>
+</head>
+<body>
+
+  <!-- Camada de simulação de daltonismo (backdrop-filter, nunca no body) -->
+  <div id="colorblindOverlay" aria-hidden="true"></div>
+
+  <nav class="skip-nav" aria-label="Atalhos de navegação">
+    <a href="#sidebar-left"  class="skip-link">Pular para menus e informações</a>
+    <a href="#sim-canvas"    class="skip-link">Pular para a simulação</a>
+    <a href="#sidebar-right" class="skip-link">Pular para os controles</a>
+  </nav>
+
+  <div id="sr-live"           class="sr-only" aria-live="polite"    aria-atomic="true"></div>
+  <div id="sr-live-assertive" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+  <header class="app-header" role="banner">
+    <div class="header-brand">
+      <a class="header-back" href="indexsegundoano.html" aria-label="Voltar à Central de Simuladores">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="16" height="16"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        <span>Central</span>
+      </a>
+      <button class="header-logo" id="btn-app-logo" aria-label="Logo do SISOL — toque para uma curiosidade química">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" width="22" height="22"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M6.5 15h11"/><circle cx="10" cy="17.5" r="1"/><circle cx="14" cy="18.5" r="1"/></svg>
+      </button>
+      <div>
+        <h1>SISOL</h1>
+        <p class="header-sub">Simulador Interativo de Soluções e Propriedades Coligativas</p>
+      </div>
+    </div>
+
+    <div class="a11y-bar" role="toolbar" aria-label="Controle de reprodução">
+      <button class="a11y-btn a11y-btn--icon" id="btn-pause"
+              aria-label="Pausar animação" aria-pressed="false"
+              title="Pausar / Retomar (Alt+P)">
+        <span aria-hidden="true" id="pause-icon">⏸</span>
+      </button>
+    </div>
+    <div class="mobile-menu-group">
+      <button type="button" class="mobile-menu-btn" id="mobile-info-btn"
+        aria-label="Abrir menus e informações" aria-expanded="false" aria-controls="sidebar-left">☰</button>
+      <button type="button" class="mobile-menu-btn" id="mobile-menu-btn"
+        aria-label="Abrir controles da simulação" aria-expanded="false" aria-controls="sidebar-right">🎛</button>
+    </div>
+  </header>
+
+  <div class="mobile-backdrop" id="mobile-backdrop" hidden></div>
+
+  <div class="keyboard-hints" role="note" aria-label="Atalhos de teclado disponíveis">
+    <kbd>Alt+1–9</kbd> Modos &nbsp;
+    <kbd>Alt+P</kbd> Pausa &nbsp;
+    <kbd>Enter/Espaço</kbd> Ação no gráfico
+  </div>
+
+  <main class="app-main" id="main-content" role="main">
+
+    <aside class="sidebar sidebar--left" id="sidebar-left"
+           aria-label="Menus, listagens e informações do simulador">
+
+      <!-- ════════ MODOS (um painel-acordeão por modo, montado pelo JS) ════════ -->
+      <div id="model-list" aria-label="Modos de estudo disponíveis, cada um com painel próprio"></div>
+
+    </aside>
+
+    <div class="canvas-wrap">
+      <canvas id="sim-canvas" tabindex="0" role="img"
+              aria-label="Simulação animada do modo selecionado"
+              aria-describedby="canvas-desc"></canvas>
+      <p id="canvas-desc" class="sr-only">
+        Área de simulação com béqueres, curvas de solubilidade, manômetros de vapor, termômetros, membrana osmótica e garrafa de gás sob pressão, atualizada em tempo real conforme os controles.
+      </p>
+      <div class="canvas-overlay" aria-hidden="true">
+        <span class="overlay-label" id="overlay-label">SISOL</span>
+      </div>
+      <div class="canvas-hint" aria-hidden="true" id="canvas-hint">Escolha um modo ao lado e clique em "Ativar" para iniciar a simulação.</div>
+      <div class="fps-counter" aria-hidden="true" id="fps-counter">-- fps</div>
+        </div>
+
+    <aside class="sidebar sidebar--right" id="sidebar-right"
+           aria-label="Controles da simulação">
+
+      <!-- ════════ MODO 1 — CLASSIFICAÇÃO DE MISTURAS ════════ -->
+      <section class="panel" id="panel-classificacao" data-owner hidden aria-labelledby="hdr-mix">
+        <button class="panel-header" id="hdr-mix" aria-expanded="true" aria-controls="body-mix">
+          <span class="panel-icon" aria-hidden="true">🔦</span>
+          <span class="panel-label">Mistura em Observação</span>
+          <span class="panel-badge">10</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-mix">
+          <div class="opt-grid" id="mix-grid" data-group="mixItem" role="listbox"
+               aria-label="Misturas do dia a dia disponíveis"></div>
+
+          <div class="action-row" role="group" aria-label="Sua classificação">
+            <button class="action-btn" data-action="resp-solucao">Solução</button>
+            <button class="action-btn" data-action="resp-coloide">Colóide</button>
+            <button class="action-btn" data-action="resp-suspensao">Suspensão</button>
+          </div>
+          <div class="action-row">
+            <button class="action-btn" data-action="toggle-lente"><span aria-hidden="true">🔍</span> Ver de perto (alternativa)</button>
+          </div>
+          <p class="hint-text">Observe o feixe de luz atravessando o béquer (efeito Tyndall) e se as partículas sedimentam com o tempo — depois escolha a classificação. Um ✓ ou ✗ confirma se você acertou.</p>
+        </div>
+      </section>
+
+      <!-- ════════ MODO 2 — PREPARO ════════ -->
+      <section class="panel" id="panel-preparo" data-owner hidden aria-labelledby="hdr-preparo">
+        <button class="panel-header" id="hdr-preparo" aria-expanded="true" aria-controls="body-preparo">
+          <span class="panel-icon" aria-hidden="true">🧂</span>
+          <span class="panel-label">Soluto e Quantidades</span>
+          <span class="panel-badge">10</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-preparo">
+          <div class="opt-grid" id="preparo-grid" data-group="soluto" role="listbox"
+               aria-label="Solutos disponíveis com massa molar"></div>
+
+          <div class="slider-row">
+            <label for="prep-massa">Massa m₁</label>
+            <input type="range" id="prep-massa" data-bind="massa" min="0" max="150" step="1" value="30" data-unit="g"/>
+            <output id="out-prep-massa" for="prep-massa">30 g</output>
+          </div>
+          <div class="slider-row">
+            <label for="prep-vol">Água</label>
+            <input type="range" id="prep-vol" data-bind="vol" min="100" max="1000" step="10" value="250" data-unit="mL"/>
+            <output id="out-prep-vol" for="prep-vol">250 mL</output>
+          </div>
+          <div class="slider-row">
+            <label for="prep-temp">Temperatura</label>
+            <input type="range" id="prep-temp" data-bind="temp" min="0" max="100" step="1" value="25" data-unit="°C"/>
+            <output id="out-prep-temp" for="prep-temp">25 °C</output>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="dissolver"><span aria-hidden="true">▶</span> Dissolver</button>
+            <button class="action-btn" data-action="prep-reset"><span aria-hidden="true">↺</span> Reiniciar</button>
+          </div>
+          <p class="hint-text">A temperatura muda o limite de solubilidade real (igual às curvas do modo 3). Antes de dissolver, os resultados ficam zerados — é um experimento. O que passar do limite fica no fundo como <strong>corpo de fundo</strong>.</p>
+        </div>
+      </section>
+
+      <!-- ════════ MODO 3 — DILUIÇÃO / MISTURA ════════ -->
+      <section class="panel" id="panel-diluicao" data-owner hidden aria-labelledby="hdr-dil">
+        <button class="panel-header" id="hdr-dil" aria-expanded="true" aria-controls="body-dil">
+          <span class="panel-icon" aria-hidden="true">💧</span>
+          <span class="panel-label">Soluções de KMnO₄</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-dil">
+          <div class="seg" data-group="op" role="group" aria-label="Operação">
+            <button class="seg-btn" data-value="diluir"  aria-pressed="true">Diluir</button>
+            <button class="seg-btn" data-value="misturar" aria-pressed="false">Misturar</button>
+          </div>
+
+          <div class="slider-row">
+            <label for="dil-c1">C₁</label>
+            <input type="range" id="dil-c1" data-bind="c1" min="0.1" max="2" step="0.05" value="1.2" data-fmt="f2" data-unit="g/L"/>
+            <output id="out-dil-c1" for="dil-c1">1,2 g/L</output>
+          </div>
+          <div class="slider-row">
+            <label for="dil-v1">V₁</label>
+            <input type="range" id="dil-v1" data-bind="v1" min="50" max="500" step="10" value="200" data-unit="mL"/>
+            <output id="out-dil-v1" for="dil-v1">200 mL</output>
+          </div>
+          <div id="row-dil-agua">
+            <div class="slider-row">
+              <label for="dil-vagua">Água a verter</label>
+              <input type="range" id="dil-vagua" data-bind="vagua" min="0" max="500" step="10" value="200" data-unit="mL"/>
+              <output id="out-dil-vagua" for="dil-vagua">200 mL</output>
+            </div>
+          </div>
+          <div id="row-dil-c2" hidden>
+            <div class="slider-row">
+              <label for="dil-c2">C₂</label>
+              <input type="range" id="dil-c2" data-bind="c2" min="0" max="2" step="0.05" value="0.4" data-fmt="f2" data-unit="g/L"/>
+              <output id="out-dil-c2" for="dil-c2">0,4 g/L</output>
+            </div>
+            <div class="slider-row">
+              <label for="dil-v2">V₂</label>
+              <input type="range" id="dil-v2" data-bind="v2" min="50" max="500" step="10" value="200" data-unit="mL"/>
+              <output id="out-dil-v2" for="dil-v2">200 mL</output>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="aplicar"><span aria-hidden="true">▶</span> Verter / Misturar</button>
+            <button class="action-btn" data-action="dil-reset"><span aria-hidden="true">↺</span> Reiniciar</button>
+          </div>
+          <p class="hint-text">Abra as torneiras para transferir tudo para o béquer maior. A cor violeta do KMnO₄ é proporcional à concentração — repare como ela muda.</p>
+        </div>
+      </section>
+
+      <!-- ════════ MODO 4 — CURVAS ════════ -->
+      <section class="panel" id="panel-curvas" data-owner hidden aria-labelledby="hdr-curvas">
+        <button class="panel-header" id="hdr-curvas" aria-expanded="true" aria-controls="body-curvas">
+          <span class="panel-icon" aria-hidden="true">📈</span>
+          <span class="panel-label">Sal, Temperatura e Massa</span>
+          <span class="panel-badge">7</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-curvas">
+          <div class="opt-grid" id="curvas-grid" data-group="sal" role="listbox"
+               aria-label="Sais com curva de solubilidade disponível"></div>
+
+          <div class="slider-row">
+            <label for="cur-t">Temperatura</label>
+            <input type="range" id="cur-t" data-bind="t" min="0" max="100" step="1" value="20" data-unit="°C"/>
+            <output id="out-cur-t" for="cur-t">20 °C</output>
+          </div>
+          <div class="slider-row">
+            <label for="cur-massa">Massa do sal</label>
+            <input type="range" id="cur-massa" data-bind="mcur" min="0" max="250" step="1" value="60" data-unit="g"/>
+            <output id="out-cur-massa" for="cur-massa">60 g</output>
+          </div>
+
+          <div class="action-row" role="group" aria-label="Sua análise do gráfico">
+            <button class="action-btn" data-action="resp-insat">Insaturada</button>
+            <button class="action-btn" data-action="resp-sat">Saturada</button>
+            <button class="action-btn" data-action="resp-corpo">Corpo de fundo</button>
+          </div>
+          <div class="action-row">
+            <button class="action-btn" data-action="toggle-zoom-curvas"><span aria-hidden="true">🔍</span> Ver de perto (alternativa)</button>
+          </div>
+          <p class="hint-text">Analise o gráfico e escolha o que está acontecendo — a massa está acima, sobre, ou abaixo da curva na temperatura marcada? Um ✓ ou ✗ confirma se você acertou.</p>
+        </div>
+      </section>
+
+    
+      <!-- ════════ MODO 5 — PRESSÃO DE VAPOR ════════ -->
+      <section class="panel" id="panel-pvap" data-owner hidden aria-labelledby="hdr-pvap">
+        <button class="panel-header" id="hdr-pvap" aria-expanded="true" aria-controls="body-pvap">
+          <span class="panel-icon" aria-hidden="true">♨️</span>
+          <span class="panel-label">Líquido e Condições</span>
+          <span class="panel-badge">5</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-pvap">
+          <div class="opt-grid" id="pvap-grid" data-group="liquido" role="listbox"
+               aria-label="Líquidos com curva de pressão de vapor"></div>
+
+          <canvas id="pvap-mini" width="220" height="200" class="mini-canvas"
+                  aria-label="Béquer e termômetro do líquido selecionado, com bolhas quando ferve"></canvas>
+
+          <div class="slider-row">
+            <label for="pv-t">Temperatura</label>
+            <input type="range" id="pv-t" data-bind="tpv" min="0" max="110" step="1" value="25" data-unit="°C"/>
+            <output id="out-pv-t" for="pv-t">25 °C</output>
+          </div>
+          <div class="slider-row">
+            <label for="pv-patm">P externa</label>
+            <input type="range" id="pv-patm" data-bind="patm" min="380" max="800" step="5" value="760" data-unit="mmHg"/>
+            <output id="out-pv-patm" for="pv-patm">760 mmHg</output>
+          </div>
+          <p class="hint-text">O gráfico ocupa a área central inteira agora. Diminua a pressão externa para simular <strong>altitude</strong>: a fervura chega mais cedo.</p>
+        </div>
+      </section>
+
+      <!-- ════════ MODO 6 — MISTURAS DE LÍQUIDOS VOLÁTEIS ════════ -->
+      <section class="panel" id="panel-raoult" data-owner hidden aria-labelledby="hdr-raoult">
+        <button class="panel-header" id="hdr-raoult" aria-expanded="true" aria-controls="body-raoult">
+          <span class="panel-icon" aria-hidden="true">⚗️</span>
+          <span class="panel-label">Líquidos e Desvio</span>
+          <span class="panel-badge">4</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-raoult">
+          <div class="seg" data-group="vistaRaoult" role="group" aria-label="Vista do modo">
+            <button class="seg-btn" data-value="grafico" aria-pressed="true">Gráfico</button>
+            <button class="seg-btn" data-value="balao" aria-pressed="false">Balão</button>
+            <button class="seg-btn" data-value="desafio" aria-pressed="false">Desafio</button>
+          </div>
+
+          <div id="row-raoult-exemplo" class="action-row">
+            <button class="action-btn" data-action="raoult-exemplo-real"><span aria-hidden="true">✓</span> Exemplo real: Etanol + Água</button>
+          </div>
+
+          <div id="row-raoult-liquidos">
+            <p class="subsec-title">Líquidos da mistura</p>
+            <p class="subsec-label"><span class="ab-tag ab-tag--a" aria-hidden="true">A</span> Líquido A</p>
+            <div class="opt-grid" id="raoult-a-grid" data-group="liquidoA" role="listbox"
+                 aria-label="Líquido A"></div>
+            <p class="subsec-label"><span class="ab-tag ab-tag--b" aria-hidden="true">B</span> Líquido B</p>
+            <div class="opt-grid" id="raoult-b-grid" data-group="liquidoB" role="listbox"
+                 aria-label="Líquido B"></div>
+          </div>
+
+          <div id="row-raoult-desvio">
+            <p class="subsec-title">Como A e B interagem entre si</p>
+            <div class="seg" data-group="desvio" role="group" aria-label="Tipo de desvio da Lei de Raoult">
+              <button class="seg-btn" data-value="ideal" aria-pressed="false">Ideal</button>
+              <button class="seg-btn" data-value="positivo" aria-pressed="true">A–B mais fracas (+)</button>
+              <button class="seg-btn" data-value="negativo" aria-pressed="false">A–B mais fortes (−)</button>
+            </div>
+          </div>
+
+          <div id="row-raoult-grafico">
+            <div class="slider-row">
+              <label for="raoult-x">Fração molar de A</label>
+              <input type="range" id="raoult-x" data-bind="xA" min="0" max="1" step="0.02" value="0.5" data-fmt="f2"/>
+              <output id="out-raoult-x" for="raoult-x">0,50</output>
+            </div>
+          </div>
+
+          <div id="row-raoult-balao">
+            <p class="hint-text" style="margin-bottom:.2rem">Pingue os dois líquidos no balão</p>
+            <div class="action-row">
+              <button class="action-btn" data-action="raoult-add-a">+ 10 mL de A</button>
+              <button class="action-btn" data-action="raoult-add-b">+ 10 mL de B</button>
+            </div>
+            <div class="action-row">
+              <button class="action-btn" data-action="raoult-reset-balao"><span aria-hidden="true">↺</span> Reiniciar balão</button>
+            </div>
+          </div>
+
+          <div id="row-raoult-desafio">
+            <p class="hint-text" style="margin-bottom:.2rem">Escolha o desafio</p>
+            <div class="opt-grid cols-1" id="raoult-desafio-grid" data-group="desafioSelect" role="listbox"
+                 aria-label="Desafios de destilação disponíveis"></div>
+            <div class="action-row">
+              <button class="action-btn" data-action="raoult-desafio-destilar"><span aria-hidden="true">🔥</span> Destilar (extrair vapor)</button>
+            </div>
+            <div class="action-row">
+              <button class="action-btn" data-action="raoult-desafio-reset"><span aria-hidden="true">↺</span> Reiniciar desafio</button>
+            </div>
+          </div>
+
+          <div id="row-raoult-temp">
+            <div class="slider-row">
+              <label for="raoult-t">Temperatura</label>
+              <input type="range" id="raoult-t" data-bind="raoultT" min="0" max="100" step="1" value="60" data-unit="°C"/>
+              <output id="out-raoult-t" for="raoult-t">60 °C</output>
+            </div>
+          </div>
+
+          <p class="hint-text">
+            <strong>Gráfico:</strong> compare a reta ideal com a curva real e ache o azeótropo.
+            <strong>Balão:</strong> monte a mistura pingando os líquidos e veja o vapor evaporar partícula a partícula.
+            <strong>Desafio:</strong> tente purificar destilando — e descubra na prática por que o azeótropo trava o processo.
+          </p>
+        </div>
+      </section>
+
+      <!-- ════════ MODO 7 — EBULIOSCOPIA E CRIOSCOPIA ════════ -->
+      <section class="panel" id="panel-colig" data-owner hidden aria-labelledby="hdr-colig">
+        <button class="panel-header" id="hdr-colig" aria-expanded="true" aria-controls="body-colig">
+          <span class="panel-icon" aria-hidden="true">🧊</span>
+          <span class="panel-label">Solvente e Soluto</span>
+          <span class="panel-badge">4</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-colig">
+          <div class="opt-grid cols-1" id="solvente-grid" data-group="solvente" role="listbox"
+               aria-label="Solventes com Ke e Kc reais"></div>
+          <div class="opt-grid" id="colig-grid" data-group="solutocol" role="listbox"
+               aria-label="Solutos e seus fatores de van 't Hoff"></div>
+
+          <div class="slider-row">
+            <label for="colig-w">Molalidade W</label>
+            <input type="range" id="colig-w" data-bind="w" min="0" max="3" step="0.05" value="1" data-fmt="f2" data-unit="mol/kg"/>
+            <output id="out-colig-w" for="colig-w">1 mol/kg</output>
+          </div>
+          <p class="hint-text">Compare a massa molar <strong>real</strong> com a <strong>aparente</strong> — o erro clássico de quem esquece o fator i ao medir por crioscopia/ebulioscopia.</p>
+        </div>
+      </section>
+
+      <!-- ════════ MODO 8 — OSMOSE ════════ -->
+      <section class="panel" id="panel-osmose" data-owner hidden aria-labelledby="hdr-osm">
+        <button class="panel-header" id="hdr-osm" aria-expanded="true" aria-controls="body-osm">
+          <span class="panel-icon" aria-hidden="true">🫧</span>
+          <span class="panel-label">Tubo em U</span>
+          <span class="panel-badge">4</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-osm">
+          <div class="seg" data-group="modoOsm" role="group" aria-label="Modo de osmose">
+            <button class="seg-btn" data-value="direta" aria-pressed="true">Osmose direta</button>
+            <button class="seg-btn" data-value="reversa" aria-pressed="false">Osmose reversa</button>
+          </div>
+
+          <div class="slider-row">
+            <label for="osm-esq">M esquerda</label>
+            <input type="range" id="osm-esq" data-bind="mesq" min="0" max="1" step="0.02" value="0.2" data-fmt="f2" data-unit="mol/L"/>
+            <output id="out-osm-esq" for="osm-esq">0,2 mol/L</output>
+          </div>
+          <div class="slider-row">
+            <label for="osm-dir">M direita</label>
+            <input type="range" id="osm-dir" data-bind="mdir" min="0" max="1" step="0.02" value="0.8" data-fmt="f2" data-unit="mol/L"/>
+            <output id="out-osm-dir" for="osm-dir">0,8 mol/L</output>
+          </div>
+          <div class="slider-row">
+            <label for="osm-t">Temperatura</label>
+            <input type="range" id="osm-t" data-bind="tosm" min="0" max="60" step="1" value="25" data-unit="°C"/>
+            <output id="out-osm-t" for="osm-t">25 °C</output>
+          </div>
+          <div id="row-osm-papl" hidden>
+            <div class="slider-row">
+              <label for="osm-papl">Pressão aplicada</label>
+              <input type="range" id="osm-papl" data-bind="papl" min="0" max="40" step="1" value="0" data-unit="atm"/>
+              <output id="out-osm-papl" for="osm-papl">0 atm</output>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="osmose-run"><span aria-hidden="true">▶</span> Iniciar fluxo</button>
+            <button class="action-btn" data-action="osmose-reset"><span aria-hidden="true">↺</span> Reiniciar</button>
+          </div>
+          <p class="hint-text" id="osm-hint">A água atravessa sozinha para o lado mais concentrado, até as concentrações se igualarem.</p>
+        </div>
+      </section>
+
+      <!-- ════════ MODO 9 — LEI DE HENRY ════════ -->
+      <section class="panel" id="panel-henry" data-owner hidden aria-labelledby="hdr-henry">
+        <button class="panel-header" id="hdr-henry" aria-expanded="true" aria-controls="body-henry">
+          <span class="panel-icon" aria-hidden="true">🥤</span>
+          <span class="panel-label">Gás e Garrafa</span>
+          <span class="panel-badge">3</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-henry">
+          <div class="opt-grid" id="henry-grid" data-group="gasHenry" role="listbox"
+               aria-label="Gases com constante de Henry disponível"></div>
+
+          <div class="slider-row">
+            <label for="henry-t">Temperatura</label>
+            <input type="range" id="henry-t" data-bind="henryT" min="0" max="40" step="1" value="4" data-unit="°C"/>
+            <output id="out-henry-t" for="henry-t">4 °C</o>
+          </div>
+          <div id="row-henry-p">
+            <div class="slider-row">
+              <label for="henry-p">Pressão na garrafa</label>
+              <input type="range" id="henry-p" data-bind="henryP" min="1" max="12" step="0.2" value="3" data-fmt="f1" data-unit="atm"/>
+              <output id="out-henry-p" for="henry-p">3,0 atm</o>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="henry-abrir"><span aria-hidden="true">🍾</span> Abrir / Fechar garrafa</button>
+            <button class="action-btn" data-action="henry-reset"><span aria-hidden="true">↺</span> Reiniciar</button>
+          </div>
+          <p class="hint-text">Água gelada retém mais gás: baixe a temperatura para ver a concentração de equilíbrio subir. Com a garrafa aberta a pressão é sempre 1 atm — o controle de pressão fica oculto.</p>
+        </div>
+      </section>
+
+      <!-- ════════ RESULTADOS ════════ -->
+      <section class="panel" aria-labelledby="hdr-result">
+        <button class="panel-header" id="hdr-result" aria-expanded="true" aria-controls="body-result">
+          <span class="panel-icon" aria-hidden="true">📊</span>
+          <span class="panel-label">Resultados</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-result">
+          <dl class="data-grid" id="result-grid" aria-live="polite" aria-atomic="true"></dl>
+        </div>
+      </section>
+
+    </aside>
+
+    
+
+  </main>
+
+  <div vw class="enabled">
+    <div vw-access-button class="active"></div>
+    <div vw-plugin-wrapper>
+      <div class="vw-plugin-top-wrapper"></div>
+    </div>
+  </div>
+  <script src="dadossolucoes.js"></script>
+  <script src="scrpitsolucoes.js"></script>
+</body>
+</html>

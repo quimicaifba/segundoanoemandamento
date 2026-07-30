@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Monte pilhas, calcule ΔE°, teste a espontaneidade, faça eletrólise ígnea e aquosa e aplique as leis de Faraday na galvanoplastia."/>
+  <title>SIELQ — Simulador Interativo de Eletroquímica</title>
+  <link rel="stylesheet" href="styleeletroquimica.css"/>
+</head>
+<body>
+
+  <!-- Camada de simulação de daltonismo (backdrop-filter, nunca no body) -->
+  <div id="colorblindOverlay" aria-hidden="true"></div>
+
+  <nav class="skip-nav" aria-label="Atalhos de navegação">
+    <a href="#sidebar-left"  class="skip-link">Pular para menus e informações</a>
+    <a href="#sim-canvas"    class="skip-link">Pular para a simulação</a>
+    <a href="#sidebar-right" class="skip-link">Pular para os controles</a>
+  </nav>
+
+  <div id="sr-live"           class="sr-only" aria-live="polite"    aria-atomic="true"></div>
+  <div id="sr-live-assertive" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+  <header class="app-header" role="banner">
+    <div class="header-brand">
+      <a class="header-back" href="indexsegundoano.html" aria-label="Voltar à Central de Simuladores">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="16" height="16"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        <span>Central</span>
+      </a>
+      <button class="header-logo" id="btn-app-logo" aria-label="Logo do SIELQ — toque para uma curiosidade química">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" width="22" height="22"><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M18 10h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2"/><path d="M11 9l-3 4h3l-1 3"/></svg>
+      </button>
+      <div>
+        <h1>SIELQ</h1>
+        <p class="header-sub">Simulador Interativo de Eletroquímica</p>
+      </div>
+    </div>
+
+    <div class="a11y-bar" role="toolbar" aria-label="Controle de reprodução">
+      <button class="a11y-btn a11y-btn--icon" id="btn-pause"
+              aria-label="Pausar animação" aria-pressed="false"
+              title="Pausar / Retomar (Alt+P)">
+        <span aria-hidden="true" id="pause-icon">⏸</span>
+      </button>
+    </div>
+    <button type="button" class="mobile-menu-btn" id="mobile-info-btn"
+      aria-label="Abrir menus e informações" aria-expanded="false" aria-controls="sidebar-left">☰</button>
+    <button type="button" class="mobile-menu-btn" id="mobile-menu-btn"
+      aria-label="Abrir controles da simulação" aria-expanded="false" aria-controls="sidebar-right">🎛</button>
+  </header>
+
+  <div class="mobile-backdrop" id="mobile-backdrop" hidden></div>
+
+  <div class="keyboard-hints" role="note" aria-label="Atalhos de teclado disponíveis">
+    <kbd>Alt+1–6</kbd> Modos &nbsp;
+    <kbd>Alt+P</kbd> Pausa &nbsp;
+    <kbd>Enter/Espaço</kbd> Ação no gráfico&nbsp;
+    <kbd>← ↑ ↓ →</kbd> Percorrer valores
+  </div>
+
+  <main class="app-main" id="main-content" role="main">
+
+    <aside class="sidebar sidebar--left" id="sidebar-left"
+           aria-label="Menus, listagens e informações do simulador">
+
+      <!-- ════════ MODOS (um painel-acordeão por modo, gerado de SIM_DATA.MODES) ════════ -->
+      <div id="model-list" aria-label="Modos de exemplo disponíveis, cada um com painel próprio"></div>
+
+    </aside>
+
+    <div class="canvas-wrap">
+      <canvas id="sim-canvas" tabindex="0" role="img"
+              aria-label="Simulação animada do modo selecionado"
+              aria-describedby="canvas-desc"></canvas>
+      <p id="canvas-desc" class="sr-only">
+        Área de simulação com meias-células, ponte salina, voltímetro, cubas eletrolíticas e fonte de corrente, atualizada em tempo real conforme os controles.
+      </p>
+      <div class="canvas-overlay" aria-hidden="true">
+        <span class="overlay-label" id="overlay-label">SIELQ</span>
+      </div>
+      <div class="canvas-hint" aria-hidden="true" id="canvas-hint">Escolha um modo ao lado e clique em "Ativar" para iniciar a simulação.</div>
+      <div class="fps-counter" aria-hidden="true" id="fps-counter">-- fps</div>
+        </div>
+
+    <aside class="sidebar sidebar--right" id="sidebar-right"
+           aria-label="Controles da simulação">
+
+      <!-- ════════ MODO 1 — MONTAR A PILHA ════════ -->
+      <section class="panel" id="panel-montar" data-owner hidden aria-labelledby="hdr-mon">
+        <button class="panel-header" id="hdr-mon" aria-expanded="true" aria-controls="body-mon">
+          <span class="panel-icon" aria-hidden="true">🔋</span>
+          <span class="panel-label">Meias-células</span>
+          <span class="panel-badge">2</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-mon">
+          <div class="slider-row">
+            <label for="sel-esq">Eletrodo esquerdo</label>
+            <select class="ctrl-select" id="sel-esq" data-bind="esq"></select>
+          </div>
+          <div class="slider-row">
+            <label for="sel-dir">Eletrodo direito</label>
+            <select class="ctrl-select" id="sel-dir" data-bind="dir"></select>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="pilha-status"><span aria-hidden="true">🔊</span> Descrever pilha</button>
+          </div>
+          <p class="hint-text">O metal de <strong>menor</strong> potencial de redução vira o <strong>ânodo</strong> (polo −).</p>
+        </div>
+      </section>
+
+      <!-- ════════ MODO 2 — ESPONTANEIDADE ════════ -->
+      <section class="panel" id="panel-espont" data-owner hidden aria-labelledby="hdr-esp">
+        <button class="panel-header" id="hdr-esp" aria-expanded="true" aria-controls="body-esp">
+          <span class="panel-icon" aria-hidden="true">🧫</span>
+          <span class="panel-label">Fita e Solução</span>
+          <span class="panel-badge">2</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-esp">
+          <div class="slider-row">
+            <label for="sel-fita">Fita metálica</label>
+            <select class="ctrl-select" id="sel-fita" data-bind="fita"></select>
+          </div>
+          <div class="slider-row">
+            <label for="sel-sol">Solução do sal</label>
+            <select class="ctrl-select" id="sel-sol" data-bind="solucao"></select>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="mergulhar"><span aria-hidden="true">▼</span> Mergulhar</button>
+            <button class="action-btn" data-action="esp-reset"><span aria-hidden="true">↺</span> Retirar</button>
+          </div>
+          <p class="hint-text">O metal só desloca outro <strong>menos reativo</strong> da solução.</p>
+        </div>
+      </section>
+
+      <!-- ════════ MODO 3 — TABELA DE POTENCIAIS ════════ -->
+      <section class="panel" id="panel-tabela" data-owner hidden aria-labelledby="hdr-tab">
+        <button class="panel-header" id="hdr-tab" aria-expanded="true" aria-controls="body-tab">
+          <span class="panel-icon" aria-hidden="true">📏</span>
+          <span class="panel-label">Par em Destaque</span>
+          <span class="panel-badge">10</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-tab">
+          <div class="opt-grid" id="tab-grid" data-group="destaque" role="listbox"
+               aria-label="Metais e seus potenciais padrão de redução"></div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="tab-status"><span aria-hidden="true">🔊</span> Ler potencial</button>
+          </div>
+          <p class="hint-text">Mais <strong>negativo</strong> = melhor redutor. Mais <strong>positivo</strong> = melhor oxidante.</p>
+        </div>
+      </section>
+
+    
+      <section class="panel" id="panel-ignea" data-owner hidden aria-labelledby="hdr-ign">
+        <button class="panel-header" id="hdr-ign" aria-expanded="true" aria-controls="body-ign">
+          <span class="panel-icon" aria-hidden="true">🌋</span>
+          <span class="panel-label">Sal Fundido</span>
+          <span class="panel-badge">3</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-ign">
+          <div class="opt-grid cols-1" id="ignea-grid" data-group="sal" role="listbox"
+               aria-label="Sais fundidos disponíveis"></div>
+
+          <div class="slider-row">
+            <label for="ign-i">Corrente</label>
+            <input type="range" id="ign-i" data-bind="iign" min="0.5" max="10" step="0.1" value="2" data-fmt="f1" data-unit="A"/>
+            <output id="out-ign-i" for="ign-i">2,0 A</output>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="toggle-fonte"><span aria-hidden="true">⚡</span> Ligar / desligar</button>
+          </div>
+          <p class="hint-text">Sem água presente, <strong>só os íons do sal</strong> podem descarregar.</p>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-aquosa" data-owner hidden aria-labelledby="hdr-aq">
+        <button class="panel-header" id="hdr-aq" aria-expanded="true" aria-controls="body-aq">
+          <span class="panel-icon" aria-hidden="true">💧</span>
+          <span class="panel-label">Eletrólito em Água</span>
+          <span class="panel-badge">6</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-aq">
+          <div class="opt-grid cols-1" id="aquosa-grid" data-group="eletrolito" role="listbox"
+               aria-label="Eletrólitos em solução aquosa"></div>
+
+          <div class="slider-row">
+            <label for="aq-i">Corrente</label>
+            <input type="range" id="aq-i" data-bind="iaq" min="0.5" max="10" step="0.1" value="2" data-fmt="f1" data-unit="A"/>
+            <output id="out-aq-i" for="aq-i">2,0 A</output>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="toggle-fonte-aq"><span aria-hidden="true">⚡</span> Ligar / desligar</button>
+          </div>
+          <p class="hint-text">Consulte as <strong>filas de descarga</strong> nos resultados ao lado.</p>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-faraday" data-owner hidden aria-labelledby="hdr-far">
+        <button class="panel-header" id="hdr-far" aria-expanded="true" aria-controls="body-far">
+          <span class="panel-icon" aria-hidden="true">⚖️</span>
+          <span class="panel-label">Galvanoplastia</span>
+          <span class="panel-badge">5</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-far">
+          <div class="opt-grid cols-1" id="far-grid" data-group="metal" role="listbox"
+               aria-label="Metais para galvanoplastia com massa molar e número de elétrons"></div>
+
+          <div class="slider-row">
+            <label for="far-i">Corrente i</label>
+            <input type="range" id="far-i" data-bind="ifar" min="0.5" max="10" step="0.1" value="2" data-fmt="f1" data-unit="A"/>
+            <output id="out-far-i" for="far-i">2,0 A</output>
+          </div>
+          <div class="slider-row">
+            <label for="far-t">Tempo t</label>
+            <input type="range" id="far-t" data-bind="tfar" min="60" max="7200" step="30" value="1800" data-unit="s"/>
+            <output id="out-far-t" for="far-t">1800 s</output>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn" data-action="depositar"><span aria-hidden="true">▶</span> Depositar</button>
+            <button class="action-btn" data-action="far-reset"><span aria-hidden="true">↺</span> Reiniciar</button>
+          </div>
+          <div class="data-grid">
+            <div class="data-row"><dt class="data-label">Constante F</dt><dd class="data-value">96.500 C/mol</dd></div>
+          </div>
+          <p class="hint-text">A massa depende da <strong>carga total</strong> Q = i·t que atravessa a cuba.</p>
+        </div>
+      </section>
+
+      <!-- ════════ RESULTADOS (sempre visível, independe do modo) ════════ -->
+      <section class="panel" aria-labelledby="hdr-result">
+        <button class="panel-header" id="hdr-result" aria-expanded="true" aria-controls="body-result">
+          <span class="panel-icon" aria-hidden="true">📊</span>
+          <span class="panel-label">Resultados</span>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="panel-body" id="body-result">
+          <dl class="data-grid" id="result-grid" aria-live="polite" aria-atomic="true"></dl>
+        </div>
+      </section>
+
+    </aside>
+
+    
+
+  </main>
+
+  <div vw class="enabled">
+    <div vw-access-button class="active"></div>
+    <div vw-plugin-wrapper>
+      <div class="vw-plugin-top-wrapper"></div>
+    </div>
+  </div>
+  <script src="dadoseletroquimica.js"></script>
+  <script src="scrpiteletroquimica.js"></script>
+</body>
+</html>
